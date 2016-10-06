@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1475758419322
+Build-Jdk: 1.8.0_66
+Built-By: root
+Bundle-ManifestVersion: 2
+Bundle-Name: A Camel Spring-DM Route
+Bundle-SymbolicName: helloworldrs
+Bundle-Version: 1.0.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: com.eai.rs.helloworld;uses:="javax.ws.rs,org.apache.came
+ l";version="1.0.0.SNAPSHOT"
+Export-Service: javax.sql.DataSource;osgi.jndi.service.name="jdbc/dataSo
+ urce"
+Import-Package: javax.sql,javax.ws.rs;version="[2.0,3)",org.apache.camel
+ ;version="[2.12,3)",org.apache.commons.dbcp,org.osgi.service.blueprint;
+ version="[1.0.0,2.0.0)"
+Tool: Bnd-1.50.0

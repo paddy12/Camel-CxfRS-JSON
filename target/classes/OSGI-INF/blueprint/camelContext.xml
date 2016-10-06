@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0"
+	xmlns:cxf="http://camel.apache.org/schema/blueprint/cxf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="   http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd   http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd   http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.1.0.xsd">
+	<bean class="org.apache.commons.dbcp.BasicDataSource" id="dataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@104.41.144.165:7070:xe" />
+		<property name="username" value="mfdemouser" />
+		<property name="password" value="m_m$#83843" />
+	</bean>
+	<service id="service-3687599a-91ca-4b4f-a481-5838db1027e5"
+		interface="javax.sql.DataSource" ref="dataSource">
+		<service-properties>
+			<entry key="osgi.jndi.service.name" value="jdbc/dataSource" />
+		</service-properties>
+	</service>
+	<bean class="com.eai.rs.helloworld.HelloWorldResponseTransformer"
+		id="HelloWorldResponseTransformer" />
+	<bean class="com.eai.rs.helloworld.HelloWorldImpl" id="serviceClass" />
+	<cxf:rsServer address="http://localhost:9090/getHelloWorld"
+		id="endpoint">
+		<cxf:serviceBeans>
+			<ref component-id="serviceClass" />
+		</cxf:serviceBeans>
+	</cxf:rsServer>
+	<camelContext id="camelContext-1" trace="false"
+		xmlns="http://camel.apache.org/schema/blueprint">
+		<route id="CXFRest_route1">
+			<!-- <log id="_log1" message="Befor calling service, the message is ${body}"/> -->
+			<from id="_from1" uri="cxfrs:bean:endpoint" />
+			<bean id="_bean2" method="getAssets" ref="HelloWorldResponseTransformer" />
+			<marshal id="_marshal1">
+				<json library="Jackson" prettyPrint="true" />
+			</marshal>
+			<to id="_to1" uri="direct:serviceClass" />
+		</route>
+		<route id="DBInsert_route2">
+			<from id="_from2" uri="direct:serviceClass" />
+			<to id="_to2"
+				uri="sql:insert into loan_lead_status(reqid,agent,status) values(012,'testK1','open')?dataSource=#dataSource" />
+			<log id="_log3" message="DB Insertion done successfully, the message is ${body}" />
+			<to id="_to3" uri="direct:RestJSON" />
+		</route>
+		<route id="RestJSON_route3">
+			
+			<from id="_from2" uri="direct:RestJSON" />
+			<removeHeaders id="_removeHeaders1" pattern="CamelHttp*" />
+			<setHeader headerName="CamelHttpQuery" id="_setHeader1">
+				<constant>{   "root":{     "reqId":“0123",     "agent":"test agent",     "status":"open"   } }</constant>
+			</setHeader>
+			<setHeader headerName="CamelHttpMethod" id="_setHeader2">
+				<constant>POST</constant>
+			</setHeader>
+			<to id="_to4" uri="http4://104.41.144.165:7080/mfdemoservice" />
+			<log id="_log2" message="Finished rest call :----${body}" />
+
+			<to uri="direct:DBUpdate" />
+		</route>
+		<route id="DBUpdate_route4">
+			<from uri="direct:DBUpdate" />
+			<to
+				uri="sql:update loan_lead_status set status='closed' where reqid=012?dataSource=#dataSource" />
+
+			<log message="DB update completed ..........${body}" />
+			<to uri="direct:DBSelect" />
+		</route>
+		
+		<!-- This Route is not Required:::::::::::just for test purpose -->
+		<route id="DBSelect_route5">
+			<from uri="direct:DBSelect" />
+			<to uri="sql:select reqid,agent,status FROM loan_lead_status where reqid=12?dataSource=#dataSource" />
+			<split>
+				<simple>${body}</simple>
+				<setHeader headerName="reqid">
+					<simple>${body[reqid]}</simple>
+				</setHeader>
+				<setHeader headerName="agent">
+					<simple>${body[agent]}</simple>
+				</setHeader>
+				<setHeader headerName="status">
+					<simple>${body[status]}</simple>
+				</setHeader>
+				<log
+					message="[splitter2] consumer ID from master:--- ${header.reqid}:---------${header.agent}:-----------${header.status} " />
+			</split>
+
+		</route>
+	</camelContext>
+</blueprint>
