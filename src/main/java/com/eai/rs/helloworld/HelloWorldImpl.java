@@ -15,13 +15,13 @@ import javax.ws.rs.core.MediaType;
 @Path("/")
 public class HelloWorldImpl {
 	
-	@Path("/getHelloWorld")
+	/*@Path("/getHelloWorld")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public HelloWorldResponse getHelloWorld(@QueryParam("") HelloWorldRequest request){
 		System.out.println("Indise getHelloWorld ::: "+request);
 		return null; 
-	}
+	}*/
 	
 	
 	 @GET
